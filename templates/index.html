@@ -1,0 +1,124 @@
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
+
+<script>
+	var old_array = "";
+	function OnClickFilter(aggregate) {
+		var selectedOption = aggregate.options[aggregate.selectedIndex];
+		keyword = selectedOption.value;
+		console.log("keyword: " + keyword);
+		songs_array = document.getElementsByClassName('search-result row');
+		songs_array = Array.from(songs_array);
+		if (old_array === "") {
+			old_array = songs_array;
+		}
+		else {
+			songs_array = old_array;
+		}
+
+		matching_songs = songs_array.filter(keyword_filter, keyword);
+		len_matching = matching_songs.length;
+		len_original = songs_array.length;
+		section = document.getElementById('song_section');
+		section.innerHTML = matching_songs.map(e => e.outerHTML).join()
+		console.log(section);
+		header = document.getElementById('results');
+		header.innerHTML = `<h2 class="lead" id="results"><strong class="text-secondary">${len_matching}</strong> / ${len_original}</h2>`;
+	}
+
+	function keyword_filter(element) {
+		keyword = this;
+		content = element.innerText;
+		return content.includes(keyword)
+	}
+
+</script>
+
+<div class="container">
+	<form action="http://127.0.0.1:3000/" method="post">
+		<input type="text" class="searchTerm" name="searchTerm" placeholder="Search all">
+		<input type="submit" value="Submit">
+	</form>
+	<form action="http://127.0.0.1:3000/metaphor" method="post">
+		<input type="text" class="searchTermMet" name="searchTermMet" placeholder="Search by metaphor">
+		<input type="submit" value="Submit">
+	</form>
+
+	{% if hits %}
+	<hgroup class="mb20">
+		<h1>Search Results</h1>
+		<h2 class="lead" id="results">No. of results: <strong class="text-secondary">{{ num_results }}</strong> Query:
+			<strong class="text-secondary">{{ query }}</strong>
+		</h2>
+	</hgroup>
+
+	<section id='song_section' class="col-md-8">
+		{% for hit in hits %}
+		<article class="search-result row">
+			<div class="col-md-12">
+				<h3><strong class="text-info">{{ hit._source.v_title_sin }}</strong></h3>
+				<ul class="meta-search">
+					<li> <span> Composer: {{ hit._source.v_composer }} </span></li>
+					<li> <span> Singer: {{ hit._source.v_singer }}</span></li>
+					<li> <span> Lyricist: {{ hit._source.v_lyricist }}</span></li>
+					<li> <span> Genre: {{ hit._source.v_genre_0 }}</span></li>
+					<li> <span> Song: {{ hit._source.v_song }}</span></li>
+				</ul>
+				<p style="white-space: pre-line">{{ hit._source.lyrics }}</p>
+			</div>
+			<div class="col-md-12">
+				<h4><strong class="text-secondary"> Metaphors list </strong></h5>
+					<ul class="meta-search">
+						<li> <span> Metaphor 01: {{ hit._source.v_metaphor_0 }} </span></li>
+						<li> <span> Meaning: {{ hit._source.v_metaphor_0_mean }}</span></li>
+					</ul>
+					{% if hit._source.v_metaphor_1 %}
+					<ul class="meta-search">
+						<li> <span> Metaphor 02: {{ hit._source.v_metaphor_1 }} </span></li>
+						<li> <span> Meaning: {{ hit._source.v_metaphor_1_mean }}</span></li>
+					</ul>
+					{% endif %}
+					{% if hit._source.v_metaphor_2 %}
+					<ul class="meta-search">
+						<li> <span> Metaphor 03: {{ hit._source.v_metaphor_2 }} </span></li>
+						<li> <span> Meaning: {{ hit._source.v_metaphor_2_mean }}</span></li>
+					</ul>
+					{% endif %}
+			</div>
+			<div class="col-md-6">
+
+			</div>
+			<span class="clearfix borda"></span>
+		</article>
+		{% endfor %}
+	</section>
+	<section class="col-md-4">
+		{% for key,value in aggs.items() %}
+		<p>{{ key }}</p>
+		<select class="meta-search" onchange="OnClickFilter(this)">
+			<option value="{{ key }}">{{ key }}</option>
+			{% for bucket in value.buckets %}
+			{% if bucket.key %}
+			<option><a id="myLink" href="#" name="{{ bucket.key }}">{{ bucket.key}}</a></option>
+			{% endif %}
+			{% endfor %}
+		</select>
+		{% endfor %}
+	</section>
+
+	{% else %}
+	{% if init %}
+	<hgroup class="mb20">
+		<h1>Sinhala Pop Songs Search Engine</h1>
+		<h2 class="lead">Enter search query</strong></h2>
+	</hgroup>
+	{% else %}
+	<hgroup class="mb20">
+		<h1>Search Results</h1>
+		<h2 class="lead">No. of results: <strong class="text-secondary">0</strong> Query: <strong
+				class="text-secondary">{{ query }}</strong></h2>
+	</hgroup>
+	{% endif %}
+	{% endif %}
+</div>
